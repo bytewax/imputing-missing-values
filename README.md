@@ -1,15 +1,15 @@
-# Template for a sample app
+# Imputing Values for real-time ML
 
 - Skill level
     
-    **Beginner, no prior knowledge requirements**
+    **Beginner**
     
 - Time to complete
     
     **Approx. 25 min**
     
 
-Introduction: *Here is a basic example of using Bytewax to turn an incoming stream of event logs from a hypothetical search engine into metrics over search sessions. In this example, we're going to focus on the dataflow itself and aggregating state, and gloss over details of building this processing into a larger system.*
+Introduction: **
 
 ## ****Prerequisites****
 
