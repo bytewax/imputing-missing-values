@@ -15,6 +15,10 @@ def random_datapoints(worker_index, worker_count, state):
         else:
             yield state, ('data', random.randrange(0, 10))
 
+flow = Dataflow()
+flow.input("input", ManualInputConfig(random_datapoints))
+# ("metric", value)
+
 class WindowedArray:
     """Windowed Numpy Array.
     Create a numpy array to run windowed statistics on.
@@ -38,15 +42,15 @@ class WindowedArray:
             new_value = value
         return self, (value, new_value)
 
+
+flow.stateful_map("windowed_array", lambda: WindowedArray(10), WindowedArray.impute_value)
+# ("metric", (old value, new value))
+
+
 def inspector(epoch, data):
     metric, (value, imputed) = data
     print(f"data: {value}, imputed value if required {imputed}")
 
-flow = Dataflow()
-flow.input("input", ManualInputConfig(random_datapoints))
-# ("metric", value)
-flow.stateful_map("windowed_array", lambda: WindowedArray(10), WindowedArray.impute_value)
-# ("metric", (old value, new value))
 flow.capture(StdOutputConfig())
 
 if __name__ == "__main__":
