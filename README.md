@@ -25,7 +25,7 @@ numpy
 
 [Github link](https://github.com/bytewax/imputing-missing-values)
 
-## The Input Code
+### Input Code
 
 Bytewax is based around the concepts of a dataflow. A dataflow is made up of a sequence of operators that interact with data that is “flowing” through. For more information, please [check out the documentation.](https://bytewax.io/docs)
 
@@ -35,7 +35,7 @@ We will use this generator function to create a stream of random data points.
 
 When the Bytewax process starts it will call our function `random_datapoints` on each worker, 1 in this instance. The type of input is specified in the `bytewax.Dataflow.input` method and we are using the `ManualInputConfig` for our custom input.
 
-## Custom Window Using Stateful Map
+### Custom Window Using Stateful Map
 
 Before we dive into the code, it is important to understand the stateful map operator. Stateful map is a one-to-one transformation of values in (key, value) pairs, but allows you to reference a persistent state for each key when doing the transformation. The stateful map operator has two parts to it: a `builder` function and a `mapper` function. The `builder` function will get evoked for each new key and the `mapper` will get called for every new data point. For more information on how this works, [the api docs](https://bytewax.io/apidocs/bytewax.dataflow#bytewax.dataflow.Dataflow.stateful_map) have a great explanation.
 
@@ -72,7 +72,7 @@ class WindowedArray:
 
 Let’s unpack the code. When our class `WindowedArray` is initialized, it will create an empty Numpy array with dtype of object.The reason the the object datatype is that this will allow us to add both integers and Nan values. For each new data point that we receive, we will instruct the stateful map operator to use the impute_value method that will check if the value is nan and then calculate the mean from the last `n` objects, `n` being the size of array of values we've "remembered". In other words, how many of the values we care about and want to use in our calculation. this will vary on the application itself. It will also add the value to our window (last_n).
 
-## The Output Code
+### Output Code
 
 Next up we will use the capture operator to write our code to an output source, in this case `StdOutputConfig`. This is not going to do anything sophisticated, just output the data and the imputed value to standard output.
 
@@ -80,7 +80,7 @@ Next up we will use the capture operator to write our code to an output source, 
 flow.capture(StdOutputConfig())
 ```
 
-## Wrapping up
+### Wrapping up
 
 Now to put it all together and add in the execution method. In this case, we wan't a single, in process dataflow worker. So we use `run_main` as the execution method and provide it with the dataflow object.
 

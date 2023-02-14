@@ -45,12 +45,6 @@ class WindowedArray:
 
 flow.stateful_map("windowed_array", lambda: WindowedArray(10), WindowedArray.impute_value)
 # ("metric", (old value, new value))
-
-
-def inspector(epoch, data):
-    metric, (value, imputed) = data
-    print(f"data: {value}, imputed value if required {imputed}")
-
 flow.capture(StdOutputConfig())
 
 if __name__ == "__main__":
