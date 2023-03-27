@@ -1,51 +1,74 @@
-import random
 import numpy as np
+import random
+
+from datetime import datetime, timedelta, timezone
 
 from bytewax.dataflow import Dataflow
 from bytewax.execution import run_main
-from bytewax.inputs import ManualInputConfig
-from bytewax.outputs import StdOutputConfig
+from bytewax.connectors.stdio import StdOutput
+
+from bytewax.window import (
+    EventClockConfig,
+    SlidingWindow,
+)
+
+from bytewax.inputs import DynamicInput, StatelessSource
+
+align_to = datetime(2023, 1, 1, tzinfo=timezone.utc)
 
 
-def random_datapoints(worker_index, worker_count, state):
-    state = None
-    for i in range(100):
+class RandomNumpyData(StatelessSource):
+    def __init__(self):
+        self._it = enumerate(range(100))
+
+    def next(self):
+        i, item = next(self._it)
         if i % 5 == 0:
-            yield state, ('data', np.nan)
+            return ("data", {"time": align_to + timedelta(seconds=i), "value": np.nan})
         else:
-            yield state, ('data', random.randrange(0, 10))
+            return (
+                "data",
+                {
+                    "time": align_to + timedelta(seconds=i),
+                    "value": random.randrange(0, 10),
+                },
+            )
+
+
+class RandomNumpyInput(DynamicInput):
+    def build(self, _worker_index, _worker_count):
+        return RandomNumpyData()
+
 
 flow = Dataflow()
-flow.input("input", ManualInputConfig(random_datapoints))
-# ("metric", value)
-
-class WindowedArray:
-    """Windowed Numpy Array.
-    Create a numpy array to run windowed statistics on.
-    """    
-    def __init__(self, window_size):
-        self.last_n = np.empty(0, dtype=object)
-        self.n = window_size    
-        
-    def _push(self, value):
-        self.last_n = np.insert(self.last_n, 0, value)
-        try:
-            self.last_n = np.delete(self.last_n, self.n)
-        except IndexError:
-            pass    
-        
-    def impute_value(self, value):
-        self._push(value)
-        if np.isnan(value):
-            new_value = np.nanmean(self.last_n)
-        else:
-            new_value = value
-        return self, (value, new_value)
+flow.input("input", RandomNumpyInput())
+# ('data', {'time': datetime.datetime(...), 'value': nan})
 
 
-flow.stateful_map("windowed_array", lambda: WindowedArray(10), WindowedArray.impute_value)
-# ("metric", (old value, new value))
-flow.capture(StdOutputConfig())
+def new_array():
+    return np.empty(0, dtype=object)
+
+
+def impute_value(acc, event):
+    new_value = event["value"]
+    if np.isnan(new_value):
+        new_value = np.nanmean(acc)
+
+    acc = np.insert(acc, 0, new_value)
+    return acc
+
+
+window_config = SlidingWindow(
+    length=timedelta(seconds=10), align_to=align_to, offset=timedelta(seconds=5)
+)
+clock_config = EventClockConfig(
+    lambda e: e["time"], wait_for_system_duration=timedelta(seconds=0)
+)
+flow.fold_window(
+    "10_second_windows", clock_config, window_config, new_array, impute_value
+)
+
+flow.output("out", StdOutput())
 
 if __name__ == "__main__":
     run_main(flow)
