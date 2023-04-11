@@ -4,7 +4,6 @@ import random
 from datetime import datetime, timedelta, timezone
 
 from bytewax.dataflow import Dataflow
-from bytewax.execution import run_main
 from bytewax.connectors.stdio import StdOutput
 
 from bytewax.window import (
@@ -69,6 +68,3 @@ flow.fold_window(
 )
 
 flow.output("out", StdOutput())
-
-if __name__ == "__main__":
-    run_main(flow)
