@@ -35,24 +35,24 @@ In this example, we're creating an input class based on the `StatelessSource` ba
 
 Lastly, we'll need to create a subclass of `DynamicInput` to return our `RandomNumpyData` class.
 
-https://github.com/bytewax/imputing-missing-values/blob/main/dataflow.py#L14-L43
+https://github.com/bytewax/imputing-missing-values/blob/310f3c04a7d2f23825291fcd5740a9692c6f787e/dataflow.py#L14-L33
 
 
-### Creating Windows Using `fold_window`
+### Custom Window Using Stateful Map
 
-We'll be using the [fold_window](https://bytewax.io/apidocs/bytewax.dataflow#bytewax.dataflow.Dataflow.fold_window) operator to create 10 second windows of our event. The fold window operator has two parts to it: a `builder` function and a `folder` function. The `builder` function will get invoked for each new key, and the `folder` will get called for every new data point. For more information on how this works, [the api docs](https://bytewax.io/apidocs/bytewax.window) have a great explanation on windows.
+Before we dive into the code, it is important to understand the stateful map operator. Stateful map is a one-to-one transformation of values in (key, value) pairs, but allows you to reference a persistent state for each key when doing the transformation. The stateful map operator has two parts to it: a `builder` function and a `mapper` function. The `builder` function will get evoked for each new key and the `mapper` will get called for every new data point. For more information on how this works, [the api docs](https://bytewax.io/apidocs/bytewax.dataflow#bytewax.dataflow.Dataflow.stateful_map) have a great explanation.
 
-Our builder function `new_array` will return a new, empty numpy array for each new key that it encounters. In the previous step, we set the key of each of our values to be the same string-**"data"**.
+In our case our key will be the same for the entire stream because we only have one stream of data in this example. So, we have some code that will create a `WindowedArray` object in the builder function and then use the update function to impute the mean.
 
-Our folder function `impute_value` receives new events, along with the accumulated values within a window. If the value is a `np.nan`, we use the Numpy `nanmean` function to calculate the mean of all of the current accumulated values. Lastly, we insert the new value into our numpy array and return it.
+https://github.com/bytewax/imputing-missing-values/blob/310f3c04a7d2f23825291fcd5740a9692c6f787e/dataflow.py#L41-L63
 
-https://github.com/bytewax/imputing-missing-values/blob/main/dataflow.py#L47-L68
+Let’s unpack the code. When our class `WindowedArray` is initialized, it will create an empty Numpy array with dtype of object.The reason the the object datatype is that this will allow us to add both integers and Nan values. For each new data point that we receive, we will instruct the stateful map operator to use the impute_value method that will check if the value is nan and then calculate the mean from the last `n` objects, `n` being the size of array of values we've "remembered". In other words, how many of the values we care about and want to use in our calculation. this will vary on the application itself. It will also add the value to our window (last_n).
 
 ### Output Code
 
 Next up we will use the capture operator to write our code to an output source, in this case `StdOutput`. This is not going to do anything sophisticated, just output the data and the imputed value to standard output.
 
-https://github.com/bytewax/imputing-missing-values/blob/main/dataflow.py#L70
+https://github.com/bytewax/imputing-missing-values/blob/310f3c04a7d2f23825291fcd5740a9692c6f787e/dataflow.py#L70
 
 ### Running our dataflow
 
