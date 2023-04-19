@@ -1,2 +1,2 @@
-bytewax
+bytewax==0.16
 numpy

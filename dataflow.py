@@ -1,39 +1,59 @@
-import random
 import numpy as np
+import random
+
+from datetime import datetime, timedelta, timezone
 
 from bytewax.dataflow import Dataflow
-from bytewax.execution import run_main
-from bytewax.inputs import ManualInputConfig
-from bytewax.outputs import StdOutputConfig
+from bytewax.connectors.stdio import StdOutput
+
+from bytewax.window import (
+    EventClockConfig,
+    SlidingWindow,
+)
+
+from bytewax.inputs import DynamicInput, StatelessSource
+
+align_to = datetime(2023, 1, 1, tzinfo=timezone.utc)
 
 
-def random_datapoints(worker_index, worker_count, state):
-    state = None
-    for i in range(100):
+class RandomNumpyData(StatelessSource):
+    def __init__(self):
+        self._it = enumerate(range(100))
+
+    def next(self):
+        i, item = next(self._it)
         if i % 5 == 0:
-            yield state, ('data', np.nan)
+            return ("data", np.nan)
         else:
-            yield state, ('data', random.randrange(0, 10))
+            return ("data", random.randint(0, 10))
+
+
+class RandomNumpyInput(DynamicInput):
+    def build(self, _worker_index, _worker_count):
+        return RandomNumpyData()
+
 
 flow = Dataflow()
-flow.input("input", ManualInputConfig(random_datapoints))
-# ("metric", value)
+flow.input("input", RandomNumpyInput())
+# ('data', {'time': datetime.datetime(...), 'value': nan})
+
 
 class WindowedArray:
     """Windowed Numpy Array.
     Create a numpy array to run windowed statistics on.
-    """    
+    """
+
     def __init__(self, window_size):
         self.last_n = np.empty(0, dtype=object)
-        self.n = window_size    
-        
+        self.n = window_size
+
     def _push(self, value):
         self.last_n = np.insert(self.last_n, 0, value)
         try:
             self.last_n = np.delete(self.last_n, self.n)
         except IndexError:
-            pass    
-        
+            pass
+
     def impute_value(self, value):
         self._push(value)
         if np.isnan(value):
@@ -43,9 +63,8 @@ class WindowedArray:
         return self, (value, new_value)
 
 
-flow.stateful_map("windowed_array", lambda: WindowedArray(10), WindowedArray.impute_value)
+flow.stateful_map(
+    "windowed_array", lambda: WindowedArray(10), WindowedArray.impute_value
+)
 # ("metric", (old value, new value))
-flow.capture(StdOutputConfig())
-
-if __name__ == "__main__":
-    run_main(flow)
+flow.output("out", StdOutput())
