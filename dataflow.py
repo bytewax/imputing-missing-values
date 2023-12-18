@@ -1,16 +1,9 @@
-import numpy as np
 import random
+from datetime import datetime, timezone
 
-from datetime import datetime, timedelta, timezone
-
-from bytewax.dataflow import Dataflow
+import numpy as np
 from bytewax.connectors.stdio import StdOutput
-
-from bytewax.window import (
-    EventClockConfig,
-    SlidingWindow,
-)
-
+from bytewax.dataflow import Dataflow
 from bytewax.inputs import DynamicInput, StatelessSource
 
 align_to = datetime(2023, 1, 1, tzinfo=timezone.utc)
@@ -20,12 +13,12 @@ class RandomNumpyData(StatelessSource):
     def __init__(self):
         self._it = enumerate(range(100))
 
-    def next(self):
+    def next_batch(self):
         i, item = next(self._it)
         if i % 5 == 0:
-            return ("data", np.nan)
+            return [("data", np.nan)]
         else:
-            return ("data", random.randint(0, 10))
+            return [("data", random.randint(0, 10))]
 
 
 class RandomNumpyInput(DynamicInput):
