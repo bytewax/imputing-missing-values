@@ -2,11 +2,11 @@ import numpy as np
 import bytewax.operators as op
 from bytewax.dataflow import Dataflow
 from bytewax.inputs import StatelessSourcePartition, DynamicSource
-from typing import Any, List
 from bytewax.connectors.stdio import StdOutSink
 from datetime import datetime, timezone
 import random 
 from bytewax.testing import run_main
+
 align_to = datetime(2023, 1, 1, tzinfo=timezone.utc) 
 
 class RandomNumpyData(StatelessSourcePartition):
@@ -31,6 +31,10 @@ class RandomNumpyInput(DynamicSource):
     
     def build(self,step_id, _worker_index, _worker_count):
         return RandomNumpyData()
+
+
+flow = Dataflow("map_eg")
+input_stream = op.input("input", flow, RandomNumpyInput())
 
 class WindowedArray:
     """Windowed Numpy Array.
@@ -63,10 +67,6 @@ class StatefulImputer:
     def impute_value(self, key, value):
         return self.windowed_array.impute_value(value)
 
-
-flow = Dataflow("map_eg")
-input_stream = op.input("input", flow, RandomNumpyInput())
 imputer = StatefulImputer(window_size=10)
 imputed_stream = op.stateful_map("impute", input_stream, imputer.impute_value)
-op.inspect("inspect", imputed_stream)
-run_main(flow)
+op.output("output", imputed_stream, StdOutSink())
