@@ -1,18 +1,23 @@
-import random
-from datetime import datetime, timezone
-
 import numpy as np
-from bytewax.connectors.stdio import StdOutput
+import bytewax.operators as op
 from bytewax.dataflow import Dataflow
-from bytewax.inputs import DynamicInput, StatelessSource
+from bytewax.inputs import StatelessSourcePartition, DynamicSource
+from typing import Any, List
+from bytewax.connectors.stdio import StdOutSink
+from datetime import datetime, timezone
+import random 
+from bytewax.testing import run_main
+align_to = datetime(2023, 1, 1, tzinfo=timezone.utc) 
 
-align_to = datetime(2023, 1, 1, tzinfo=timezone.utc)
+class RandomNumpyData(StatelessSourcePartition):
+    ''' Data Source that generates a sequence 
+    of 100 numbers, where every 5th number is 
+    missing (represented by np.nan),
+    and the rest are random integers between 0 and 10. '''
 
-
-class RandomNumpyData(StatelessSource):
-    def __init__(self):
-        self._it = enumerate(range(100))
-
+    def __init__(self): 
+         self._it = enumerate(range(100)) 
+    
     def next_batch(self):
         i, item = next(self._it)
         if i % 5 == 0:
@@ -20,16 +25,12 @@ class RandomNumpyData(StatelessSource):
         else:
             return [("data", random.randint(0, 10))]
 
-
-class RandomNumpyInput(DynamicInput):
-    def build(self, _worker_index, _worker_count):
+class RandomNumpyInput(DynamicSource):
+    ''' Class encapsulating dynamic data generation 
+    based on worker distribution in distributed processing '''
+    
+    def build(self,step_id, _worker_index, _worker_count):
         return RandomNumpyData()
-
-
-flow = Dataflow()
-flow.input("input", RandomNumpyInput())
-# ('data', {'time': datetime.datetime(...), 'value': nan})
-
 
 class WindowedArray:
     """Windowed Numpy Array.
@@ -55,9 +56,17 @@ class WindowedArray:
             new_value = value
         return self, (value, new_value)
 
+class StatefulImputer:
+    def __init__(self, window_size):
+        self.windowed_array = WindowedArray(window_size)
 
-flow.stateful_map(
-    "windowed_array", lambda: WindowedArray(10), WindowedArray.impute_value
-)
-# ("metric", (old value, new value))
-flow.output("out", StdOutput())
+    def impute_value(self, key, value):
+        return self.windowed_array.impute_value(value)
+
+
+flow = Dataflow("map_eg")
+input_stream = op.input("input", flow, RandomNumpyInput())
+imputer = StatefulImputer(window_size=10)
+imputed_stream = op.stateful_map("impute", input_stream, imputer.impute_value)
+op.inspect("inspect", imputed_stream)
+run_main(flow)
