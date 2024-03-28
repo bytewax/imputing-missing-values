@@ -3,12 +3,9 @@ import bytewax.operators as op
 from bytewax.dataflow import Dataflow
 from bytewax.inputs import StatelessSourcePartition, DynamicSource
 from bytewax.connectors.stdio import StdOutSink
-from datetime import datetime, timezone
 import random 
 from bytewax.testing import run_main
-from bytewax._encoder import to_plantuml, to_json
-
-align_to = datetime(2023, 1, 1, tzinfo=timezone.utc) 
+from bytewax._encoder import to_plantuml
 
 class RandomNumpyData(StatelessSourcePartition):
     ''' 
@@ -83,6 +80,7 @@ class StatefulImputer:
 imputer = StatefulImputer(window_size=10)
 imputed_stream = op.stateful_map("impute", input_stream, imputer.impute_value)
 # optional - run a test
+# op.inspect("inspect", imputed_stream)
 # run_main(flow)
 op.output("output", imputed_stream, StdOutSink())
 

@@ -35,7 +35,7 @@ Bytewax is based around the concept of a **dataflow**. A dataflow is made up of 
 
 ### Goal: generate a dataflow that will impute missing values in a stream of data of random integers and `nan` values.
 
-We can represent our dataflow - called 'map_eg' through this diagram, in which the data flows through three key steps:
+We can represent our dataflow - called `map_eg` through this diagram, in which the data flows through three key steps:
 
 1. input
 2. stateful map
@@ -53,10 +53,11 @@ For this example we will mock up some data that will yield either a random integ
 
 To simulate the generation of random numbers and `nan` values, we will create a class called `RandomNumpyData` that will return a random integer between 0 and 10 or `nan` value for every 5th value. We will build this class such that it inherits from the `StatelessSourcePartition`. This will enable us to create our input as a Bytewax input partition that is stateless. 
 
-Lastly, we'll need to create a subclass of `DynamicInput` to return our `RandomNumpyData` class.
+We will then create the `RandomNumpyInput` class - this acts as a wrapper for `RandomNumpyData`, facilitating dynamic data generation based on the distribution of work across multiple workers in a distributed processing system. When the data source needs to be built (e.g., at the start of a processing step or when distributed across workers), it simply creates and returns an instance of `RandomNumpyData`.
 
 https://github.com/bytewax/imputing-missing-values/blob/310f3c04a7d2f23825291fcd5740a9692c6f787e/dataflow.py#L14-L33
 
+When the data source needs to be built (e.g., at the start of a processing step or when distributed across workers), it simply creates and returns an instance of RandomNumpyData.
 
 ### Custom Window Using Stateful Map
 
