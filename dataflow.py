@@ -44,24 +44,27 @@ class WindowedArray:
     """
 
     def __init__(self, window_size):
-        self.last_n = np.empty(0, dtype=object)
+        self.last_n = np.empty(0, dtype=float)
         self.n = window_size
 
     def _push(self, value):
-        self.last_n = np.insert(self.last_n, 0, value)
-        try:
-            self.last_n = np.delete(self.last_n, self.n)
-        except IndexError:
-            pass
+        if np.isscalar(value) and np.isreal(value):
+            self.last_n = np.insert(self.last_n, 0, value)
+            try:
+                self.last_n = np.delete(self.last_n, self.n)
+            except IndexError:
+                pass
 
     def impute_value(self, value):
         self._push(value)
         if np.isnan(value):
-            new_value = np.nanmean(self.last_n)
+            if self.last_n.size == 0 or np.all(np.isnan(self.last_n)):
+                new_value = value
+            else:
+                new_value = np.nanmean(self.last_n)
         else:
             new_value = value
         return self, (value, new_value)
-
 class StatefulImputer:
     '''
     This class is a stateful object that encapsulates a 
@@ -84,6 +87,7 @@ imputed_stream = op.stateful_map("impute", input_stream, imputer.impute_value)
 # run_main(flow)
 op.output("output", imputed_stream, StdOutSink())
 
-if __name__ == "__main__":
+# Optional - print the plantuml diagram
+# if __name__ == "__main__":
 
-    print(to_plantuml(flow, recursive=False))
+#     print(to_plantuml(flow, recursive=False))
