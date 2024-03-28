@@ -14,8 +14,8 @@ Introduction: **Given that the real world is never ideal, our datasets are often
 ## ****Prerequisites****
 
 **Python modules**
-bytewax
-numpy
+* bytewax==0.19
+* numpy
 
 ## Your Takeaway
 
@@ -25,13 +25,33 @@ numpy
 
 [Github link](https://github.com/bytewax/imputing-missing-values)
 
-### Input Code
+### Important Concepts
 
-Bytewax is based around the concept of a dataflow. A dataflow is made up of a sequence of operators that interact with data that is “flowing” through it.
+Bytewax is based around the concept of a **dataflow**. A dataflow is made up of a sequence of operators that interact with data that is “flowing” through it. The dataflow is a directed graph where the nodes are operators and the edges are the data that flows between them. The dataflow is a powerful abstraction that allows you to build complex data processing pipelines with ease.
+
+**Stateless vs stateful** - In Bytewax, operators can be either stateless or stateful. A stateless operator is one that does not maintain any state between invocations. A stateful operator, on the other hand, maintains some state between invocations. This state can be used to store information about the data that has been seen so far, or to store the results of some computation.
+
+**Workers** - A worker is a process that runs a dataflow. Workers are responsible for executing the operators in the dataflow and passing data between them. Workers can run on a single machine, or they can be distributed across multiple machines.
+
+### Goal: generate a dataflow that will impute missing values in a stream of data of random integers and `nan` values.
+
+We can represent our dataflow - called 'map_eg' through this diagram, in which the data flows through three key steps:
+
+1. input
+2. stateful map
+3. output
+
+![](./diagram.png)
+
+During data input, we will generate random integers and `nan` values. In the stateful map, we will create a custom window to impute the missing values. Finally, we will output the data and the imputed value to standard output.
+
+Let's get started!
+
+### Input Code
 
 For this example we will mock up some data that will yield either a random integer between 0 and 10, or a numpy `nan` value for every 5th value we generate.
 
-In this example, we're creating an input class based on the `StatelessSource` base class. `StatelessSource` only requires that we define the `next` method that will return the next item for Bytewax to process.
+To simulate the generation of random numbers and `nan` values, we will create a class called `RandomNumpyData` that will return a random integer between 0 and 10 or `nan` value for every 5th value. We will build this class such that it inherits from the `StatelessSourcePartition`. This will enable us to create our input as a Bytewax input partition that is stateless. 
 
 Lastly, we'll need to create a subclass of `DynamicInput` to return our `RandomNumpyData` class.
 
