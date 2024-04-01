@@ -65,6 +65,7 @@ class WindowedArray:
         else:
             new_value = value
         return self, (value, new_value)
+    
 class StatefulImputer:
     '''
     This class is a stateful object that encapsulates a 
@@ -87,7 +88,7 @@ imputed_stream = op.stateful_map("impute", input_stream, imputer.impute_value)
 # run_main(flow)
 op.output("output", imputed_stream, StdOutSink())
 
-# Optional - print the plantuml diagram
+#Optional - print the plantuml diagram
 # if __name__ == "__main__":
 
 #     print(to_plantuml(flow, recursive=False))
