@@ -41,7 +41,7 @@ We can represent our dataflow - called `map_eg` through this diagram, in which t
 2. stateful map to impute the values: we will create a custom window to impute the missing values
 3. output: output the data and the imputed value to standard output
 
-<img source="./mermaid.png" width="100px"></img>
+<img src="./mermaid.png" width="100px"/>
 
 During data input, we will generate random integers and `nan` values. In the stateful map, we will create a custom window to impute the missing values. Finally, we will output the data and the imputed value to standard output.
 
