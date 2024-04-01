@@ -37,9 +37,9 @@ Bytewax is based around the concept of a **dataflow**. A dataflow is made up of 
 
 We can represent our dataflow - called `map_eg` through this diagram, in which the data flows through three key steps:
 
-1. input
-2. stateful map
-3. output
+1. input: includes a random integer between 0 and 10 or a numpy `nan` value for every 5th value
+2. stateful map to impute the values: we will create a custom window to impute the missing values
+3. output: output the data and the imputed value to standard output
 
 ![](./mermaid.png)
 
