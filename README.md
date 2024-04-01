@@ -113,7 +113,7 @@ This yields:
 ('data', (nan, 6.625))
 ```
 
-Note that the imputed value is calculated based on the last 4 values in the window. 
+On the left hand side of the tuple we see the original value, and on the right hand side the imputed value. Note that the imputed value is calculated based on the last 4 values in the window. Note also that if the first value in the stream is an empty value, the imputed value will be the same as the first value in the stream.
 
 ## Summary
 
